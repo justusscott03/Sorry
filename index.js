@@ -1,10 +1,13 @@
-/*
+import { color, background, noStroke, fill, strokeWeight, noFill, stroke, lerpColor } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/colors.js";
+import { cursor, get, startMask, endMask } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/other.js";
+import { ellipse, arc, rect, triangle, image } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/shapes.js";
+import { lerp, round, random, dist, constrain } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/math.js";
+import { textFont, textAlign, textSize, textWeight, text, outlinedText } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/text.js";
+import { pushMatrix, translate, rotate, scale, popMatrix } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/transformation.js";
+import { user } from "./ui.js";
 
-I have an absolute TON of incomplete projects! I basically would start a project, think of something else that would be cool to make, and start that! That went on for a while until I commited to a larger project. That also started dying, so I moved to development with Unreal Engine and Unity. Operation project dump is where I'm dumping my incomplete projects and will hopefully eventually finish them.
-
-This one got quite a bit farther than I thought hit would (given my history). It's not bad to play, but there a quite few missing mechanics. I was actually pretty pleased with the graphics in this one. If you want to actually try the game, add this (?width=800&height=800) to the link to this page, or go to this link (https://www.khanacademy.org/computer-programming/operation-project-dump-sorry/5695312448045056?width=800&height=800)
-
-*/
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
 /** Global variables **/
 // {
@@ -21,6 +24,22 @@ var scene = "game";
 
 //}
 
+function resetCanvas (canvas, ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1.0;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = 1.0;
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+    ctx.miterLimit = 10;
+    ctx.strokeStyle = "#000000";
+    ctx.fillStyle = "#000000";
+    ctx.font = "10px sans-serif";
+    ctx.textAlign = "start";
+    ctx.textBaseline = "alphabetic";
+}
+
 /** Turn phase transition **/
 // {
 
@@ -33,8 +52,10 @@ var nextPhase = {
         fill(0, 0, 0, this.opac);
         rect(0, 0, 800, 800);
         fill(255, 255, 255, this.opac * 5.1);
-        textFont(createFont("Sans Serif Bold"));
-        textAlign(CENTER, CENTER);
+        textFont("sans-serif");
+        textWeight("bold");
+        textSize(70);
+        textAlign("CENTER", "CENTER");
         textSize(40);
         text("Continue to " + this.next.toUpperCase() + " phase (click)", 400, 600);
     },
@@ -56,38 +77,26 @@ var nextPhase = {
 
 //}
 
-/** Outlined text, credit to A Random Coder (@ARandomCoder123) **/
-// {
-
-var outlinedText = function (txt, x, y, weight, main, outline, inc) {
-    inc = inc || 10;
-    fill(outline);
-    for (var i = 0; i < 360; i += inc) {
-        text(txt, x + sin(i) * weight, y + cos(i) * weight);
-    }
-    fill(main);
-    text(txt, x, y);
-};
-
-//}
-
 /** Space **/
 // {
 
-var Space = function (x, y, w, h, type) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.type = type;
-    this.occupied = false;
-    this.occupier = null;
-};
-Space.prototype.draw = function () {
-    noStroke();
-    fill(240);
-    rect(this.x, this.y, this.w, this.h, 10);
-};
+class Space {
+    constructor(x, y, w, h, type) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.type = type;
+        this.occupied = false;
+        this.occupier = null;
+    }
+
+    draw() {
+        noStroke();
+        fill(240);
+        rect(this.x, this.y, this.w, this.h, 10);
+    }
+}
     
 var spaces = [];
 // Top
@@ -114,8 +123,6 @@ for (var i = 0; i < 14; i++) {
 
 var images = {
     customCursor : function () {
-        
-        background(0, 0, 0, 0);
         
         noStroke();
         
@@ -221,9 +228,10 @@ var images = {
         strokeWeight(2);
         triangle(65, 575, 80, 560, 80, 590);
         
-        textFont(createFont("Sans Serif Bold"));
-        textAlign(CENTER, CENTER);
+        textFont("sans-serif");
         textSize(22);
+        textWeight("bold");
+        textAlign("CENTER", "CENTER");
         
         pushMatrix();
             translate(225, 110);
@@ -285,59 +293,42 @@ var images = {
     },
     cardBackground : function () {
         
-        background(0, 0, 0, 0);
-        
         noStroke();
         
         fill(255);
-        rect(0, 0, 200, 300, 10);
-        
-        var msk = createGraphics(width, height, P2D);
-        
-        msk.background(0, 0, 0, 0);
-        
-        msk.rect(5, 7.5, 190, 285);
-        
-        msk = msk.get();
-        
-        var bkg = createGraphics(width, height, P2D);
-        
-        bkg.noStroke();
-        
-        bkg.fill(255);
-        bkg.rect(0, 0, 200, 300);
+        startMask(() => {
+            rect(0, 0, 200, 300, 10);
+        });
+
+        fill(255);
+        rect(0, 0, 200, 300);
         
         pushMatrix();
             
-            bkg.rotate(7 * PI / 4);
+            rotate(315);
             
-            bkg.fill(0);
-            bkg.rect(-70, 20, 80, 40, 50);
-            bkg.ellipse(-5, 40, 40, 40);
+            fill(0);
+            rect(-70, 20, 80, 40, 10);
+            ellipse(0, 40, 40, 40);
+
+            arc(-5, 40, 40, 40, 0, 10);
             
-            bkg.rect(-70, 20, 80, 40, 50);
-            bkg.arc(-5, 40, 40, 40, 0, 10);
+            rect(-85, 290, 80, 40, 10);
+            ellipse(-75, 310, 40, 40);
             
-            bkg.rect(-85, 290, 80, 40, 50);
-            bkg.ellipse(-70, 310, 40, 40);
+            let rand = round(random(30, 60));
             
-            var rand = round(random(30, 60));
-            
-            for (var i = 0; i < 20; i++) {
-                for (var j = 0; j < 10; j++) {
-                    bkg.fill(175);
-                    bkg.rect(i * rand - 300, j * 15 + 100, rand, 10, 50);
+            for (let i = 0; i < 20; i++) {
+                for (let j = 0; j < 10; j++) {
+                    fill(175);
+                    rect(i * rand - 300, j * 15 + 100, rand, 10, 5);
                     rand = random(30, 60);
                 }
             }
             
         popMatrix();
-        
-        bkg = bkg.get();
-        
-        bkg.mask(msk);
-        
-        image(bkg, 0, 0);
+
+        endMask();
         
         return get(0, 0, 200, 300);
         
@@ -385,41 +376,23 @@ var images = {
     },
     cardBack : function () {
         
-        background(0, 0, 0, 0);
-        
         noStroke();
         
+        startMask(() => { rect(0, 0, 200, 300, 10); });
+
         fill(120);
-        rect(0, 0, 200, 300, 10);
+        rect(0, 0, 200, 300);
         
-        var msk = createGraphics(width, height, P2D);
-        
-        msk.background(0, 0, 0, 0);
-        
-        msk.rect(5, 7.5, 190, 285);
-        
-        msk = msk.get();
-        
-        var bkg = createGraphics(width, height, P2D);
-        
-        bkg.noStroke();
-        
-        bkg.fill(120);
-        bkg.rect(0, 0, 200, 300);
+        fill(120);
+        rect(0, 0, 200, 300);
         
         pushMatrix();
             
-            bkg.rotate(7 * PI / 4);
-            
-            
+            rotate(7 * Math.PI / 4);
             
         popMatrix();
-        
-        bkg = bkg.get();
-        
-        bkg.mask(msk);
-        
-        image(bkg, 0, 0);
+
+        endMask();
         
         return get(0, 0, 200, 300);
         
@@ -516,83 +489,90 @@ var images = {
 
 var curLoad = 0;
 var loaded = false;
-var load = function () {
-    var obj = Object.keys(images);
+function load () {
+    let obj = Object.keys(images);
+
+    resetCanvas(canvas, ctx);
     
     images[obj[curLoad]] = images[obj[curLoad]]();
     
     curLoad++;
     
-    if (curLoad >= Object.keys(images).length) {
+    if (curLoad >= obj.length) {
         loaded = true;
     }
-};
+}
 
 //}
 
 /** Player **/
 // {
 
-var Player = function (x, y, s, c, startSpace) {
-    this.x = x;
-    this.y = y;
-    this.startX = x;
-    this.startY = y;
-    this.s = s;
-    this.c = c;
-    this.startSpace = startSpace;
-    
-    this.inPlay = false;
-    this.safe = false;
-    this.home = false;
-    this.onSlide = false;
-    this.canMove = false;
-    this.dead = false;
-    
-    this.curSpace = 0;
-    this.targetSpace = startSpace;
-};
-Player.prototype.move = function () {
-    this.x = lerp(this.x, spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2, 0.1);
-    this.y = lerp(this.y, spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2, 0.1);
-    
-    
-    if (this.targetSpace.occupied) {
-        this.targetSpace.occupier.die();
+class Player {
+    constructor(x, y, s, c, startSpace) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.s = s;
+        this.c = c;
+        this.startSpace = startSpace;
+        
+        this.inPlay = false;
+        this.safe = false;
+        this.home = false;
+        this.onSlide = false;
+        this.canMove = false;
+        this.dead = false;
+        
+        this.curSpace = 0;
+        this.targetSpace = startSpace;
     }
-    
-    spaces[this.curSpace].occupied = false;
-    spaces[this.curSpace].occupier = null;
-    spaces[this.targetSpace].occupied = true;
-    spaces[this.targetSpace].occupier = this;
-    
-    if ((this.x + 1 > spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2 && this.x - 1 < spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2) || (this.y + 1 > spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2 && this.y - 1 < spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2)) {
-        this.curSpace = this.targetSpace;
+
+    move() {
+        this.x = lerp(this.x, spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2, 0.1);
+        this.y = lerp(this.y, spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2, 0.1);
+        
+        
+        if (this.targetSpace.occupied) {
+            this.targetSpace.occupier.die();
+        }
+        
+        spaces[this.curSpace].occupied = false;
+        spaces[this.curSpace].occupier = null;
+        spaces[this.targetSpace].occupied = true;
+        spaces[this.targetSpace].occupier = this;
+        
+        if ((this.x + 1 > spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2 && this.x - 1 < spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2) || (this.y + 1 > spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2 && this.y - 1 < spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2)) {
+            this.curSpace = this.targetSpace;
+        }
     }
-};
-Player.prototype.die = function () {
-    this.x = lerp(this.x, this.startX, 0.1);
-    this.y = lerp(this.y, this.startY, 0.1);
-    this.inPlay = false;
-};
-Player.prototype.draw = function () {
-    if (this.dead) {
-        this.die();
+
+    die() {
+        this.x = lerp(this.x, this.startX, 0.1);
+        this.y = lerp(this.y, this.startY, 0.1);
+        this.inPlay = false;
     }
-    
-    if (clicked && dist(mouseX, mouseY, this.x, this.y) < this.s / 2 && turnPhase === "move") {
-        selectedPlayer = this;
+
+    draw() {
+        if (this.dead) {
+            this.die();
+        }
+        
+        if (clicked && dist(user.mouseX, user.mouseY, this.x, this.y) < this.s / 2 && turnPhase === "move") {
+            selectedPlayer = this;
+        }
+        
+        noStroke();
+        image(images[this.c + "Player"], this.x - this.s / 2, this.y - this.s / 2);
+        
+        if (selectedPlayer === this && this.canMove) {
+            noFill();
+            stroke(255, 0, 0);
+            rect(this.x - this.s / 2, this.y - this.s / 2, this.s, this.s);
+        }
     }
-    
-    noStroke();
-    image(images[this.c + "Player"], this.x - this.s / 2, this.y - this.s / 2);
-    
-    if (selectedPlayer === this && this.canMove) {
-        noFill();
-        stroke(255, 0, 0);
-        rect(this.x - this.s / 2, this.y - this.s / 2, this.s, this.s);
-    }
-};
+}
 
 var team1 = [
     new Player(205, 90, 40, "green", 4),
@@ -734,78 +714,82 @@ var cards = [
 
 //}
 
-/** Card **/
-// {
+class Card {
+    constructor(x, y, w, h, card) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.r = 45;
+        this.scaleX = -1 / 2;
+        this.scaleY = 1 / 2;
+        this.card = card;
+        this.drawTimer = 0;
+        this.actionTimer = 0;
+        this.discardTimer = 0;
+    }
 
-var Card = function (x, y, w, h, card) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.r = 45;
-    this.scaleX = -1 / 2;
-    this.scaleY = 1 / 2;
-    this.card = card;
-    this.drawTimer = 0;
-    this.actionTimer = 0;
-    this.discardTimer = 0;
-};
-Card.prototype.drawFromDeck = function () {
-    this.drawTimer++;
-    if (this.drawTimer > 80) {
-        nextPhase.next = "move";
-        nextPhase.on = true;
-    }
-    this.x = lerp(this.x, 300, 0.1);
-    this.y = lerp(this.y, 250, 0.1);
-    this.scaleX = lerp(this.scaleX, 1, 0.1);
-    this.scaleY = lerp(this.scaleY, 1, 0.1);
-    this.r = lerp(this.r, 0, 0.1);
-};
-Card.prototype.move = function (curPlayer) {
-    this.card.movePlayer(curPlayer);
-};
-Card.prototype.discard = function () {
-    this.discardTimer++;
-    if (this.discardTimer > 80 && turnPhase === "move") {
-        nextPhase.next = "draw";
-        nextPhase.on = true;
-    }
-    this.x = lerp(this.x, 183, 0.1);
-    this.y = lerp(this.y, 140, 0.1);
-    this.scaleX = lerp(this.scaleX, 1 / 2, 0.1);
-    this.scaleY = lerp(this.scaleY, 1 / 2, 0.1);
-    this.r = lerp(this.r, 45, 0.1);
-};
-Card.prototype.draw = function () {
-    pushMatrix();
-        translate(this.x + this.w / 2, this.y + this.h / 2);
-        rotate(this.r);
-        scale(this.scaleX, this.scaleY);
-        translate(-(this.x + this.w / 2), -(this.y + this.h / 2));
-        if (this.scaleX > 0) {
-            image(images.cardBackground, this.x, this.y, this.w, this.h);
-            image(images.cardOverlay, this.x + this.w / 10, this.y + this.h * 2 / 9, this.w * 4 / 5, this.h * 8 / 15);
-            
-            fill(255);
-            textFont(createFont("Sans Serif Bold"));
-            textAlign(CENTER, CENTER);
-            textSize(70);
-            text(this.card.value, this.x + this.w / 2, this.y + this.h / 2);
-            textSize(25);
-            text(this.card.value, this.x + this.w / 8, this.y + this.h / 10);
-            text(this.card.value, this.x + this.w / 1.17, this.y + this.h / 1.12);
-            
-            fill(0);
-            textSize(12);
-            textAlign(LEFT, BASELINE);
-            text(this.card.txt, this.x + this.w / 4, this.y + this.h / 15, this.w * 3 / 4, this.h);
+    drawFromDeck() {
+        this.drawTimer++;
+        if (this.drawTimer > 80) {
+            nextPhase.next = "move";
+            nextPhase.on = true;
         }
-        else {
-            image(images.cardBack, this.x, this.y, this.w, this.h);
+        this.x = lerp(this.x, 300, 0.1);
+        this.y = lerp(this.y, 250, 0.1);
+        this.scaleX = lerp(this.scaleX, 1, 0.1);
+        this.scaleY = lerp(this.scaleY, 1, 0.1);
+        this.r = lerp(this.r, 0, 0.1);
+    }
+
+    move(curPlayer) {
+        this.card.movePlayer(curPlayer);
+    }
+
+    discard() {
+        this.discardTimer++;
+        if (this.discardTimer > 80 && turnPhase === "move") {
+            nextPhase.next = "draw";
+            nextPhase.on = true;
         }
-    popMatrix();
-};
+        this.x = lerp(this.x, 183, 0.1);
+        this.y = lerp(this.y, 140, 0.1);
+        this.scaleX = lerp(this.scaleX, 1 / 2, 0.1);
+        this.scaleY = lerp(this.scaleY, 1 / 2, 0.1);
+        this.r = lerp(this.r, 45, 0.1);
+    }
+
+    draw() {
+        pushMatrix();
+            translate(this.x + this.w / 2, this.y + this.h / 2);
+            rotate(this.r);
+            scale(this.scaleX, this.scaleY);
+            translate(-(this.x + this.w / 2), -(this.y + this.h / 2));
+            if (this.scaleX > 0) {
+                image(images.cardBackground, this.x, this.y, this.w, this.h);
+                image(images.cardOverlay, this.x + this.w / 10, this.y + this.h * 2 / 9, this.w * 4 / 5, this.h * 8 / 15);
+                
+                fill(255);
+                textAlign("CENTER", "CENTER");
+                textFont("sans-serif");
+                textSize(70);
+                textWeight("bold");
+                text(this.card.value, this.x + this.w / 2, this.y + this.h / 2);
+                textSize(25);
+                text(this.card.value, this.x + this.w / 8, this.y + this.h / 10);
+                text(this.card.value, this.x + this.w / 1.17, this.y + this.h / 1.12);
+                
+                fill(0);
+                textSize(12);
+                textAlign("LEFT", "BASELINE");
+                text(this.card.txt, this.x + this.w / 4, this.y + this.h / 15, this.w * 3 / 4, this.h);
+            }
+            else {
+                image(images.cardBack, this.x, this.y, this.w, this.h);
+            }
+        popMatrix();
+    }
+}
 
 //}
 
@@ -839,19 +823,22 @@ shuffleArray(drawDeck);
 /** Button **/
 // {
 
-var Button = function (x, y, w, h, txt, func) {
-    this.x = x;
-    this.y = y;
-    this.w = w;
-    this.h = h;
-    this.txt = txt;
-    this.func = func;
-    this.mouseOver = false;
-    this.arc = 180;
-    
-    this.draw = function () {
+class Button {
+    constructor(x, y, w, h, txt, txtSize, func) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.txt = txt;
+        this.txtSize = txtSize;
+        this.func = func;
+        this.mouseOver = false;
+        this.arc = 180;
+    }
+
+    draw() {
         
-        this.mouseOver = dist(mouseX, mouseY, this.x, this.y) < this.w / 2;
+        this.mouseOver = dist(user.mouseX, user.mouseY, this.x, this.y) < this.w / 2;
         
         if (this.mouseOver) {
             this.arc = lerp(this.arc, 0, 0.1);
@@ -868,25 +855,27 @@ var Button = function (x, y, w, h, txt, func) {
         image(images.customCursor, this.x - this.w / 2, this.y - this.h / 2, this.w, this.h);
         
         fill(0);
-        textFont(createFont("Sans Serif Bold"));
-        textAlign(CENTER, CENTER);
+        textFont("sans-serif");
+        textWeight("bold");
+        textSize(this.txtSize);
+        textAlign("CENTER", "CENTER");
         text(this.txt, this.x, this.y);
         
         fill(0, 0, 0, 30);
         arc(this.x, this.y, this.w, this.h, 0, this.arc);
         arc(this.x, this.y, this.w, this.h, 180, 180 + this.arc);
         
-    };
-};
+    }
+}
 
-var confirm = new Button(200, 200, 75, 75, "Confirm", function () {});
+const confirm = new Button(200, 200, 75, 75, "Confirm", 15, function () {});
 
 //}
 
 /** Draw and mouseClicked funcitons **/
 // {
 
-draw = function () {
+function draw () {
     try {
         
     cursor("none");
@@ -1022,13 +1011,13 @@ draw = function () {
                 
                 cursorR += 5;
                 pushMatrix();
-                    translate(mouseX, mouseY);
+                    translate(user.mouseX, user.mouseY);
                     rotate(cursorR);
                     scale(0.15);
                     image(images.customCursor, -80, -80);
                 popMatrix();
                 
-                textAlign(BASELINE);
+                textAlign("LEFT", "BASELINE");
                 fill(0);
                 textSize(15);
                 text("Current player: ", 15, 20);
@@ -1038,22 +1027,31 @@ draw = function () {
             break;
         }
     }
+    // else {
+    //     background(50);
+    //     image(images.cardBackground, 100, 100);
+
+    // }
     
     nextPhase.pack();
     clicked = false;
     
     fill(0);
     textSize(15);
-    textAlign(BASELINE);
-    outlinedText("FPS: " + ~~this.__frameRate, 10, 785, 2, color(255), color(0));
+    textAlign("LEFT", "BASELINE");
+    //outlinedText("FPS: " + ~~this.__frameRate, 10, 785, 2, color(255), color(0));
     
     }
     catch (e) {
-        println(e);
+        console.log(e);
     }
-};
 
-mouseClicked = function () {
+    requestAnimationFrame(draw);
+}
+
+draw();
+
+window.onmouseup = function () {
     clicked = true;
 };
 
