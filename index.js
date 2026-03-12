@@ -1,28 +1,20 @@
-import { color, background, noStroke, fill, strokeWeight, noFill, stroke, lerpColor } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/colors.js";
-import { cursor, get, startMask, endMask } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/other.js";
-import { ellipse, arc, rect, triangle, image } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/shapes.js";
-import { lerp, round, random, dist, constrain } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/math.js";
-import { textFont, textAlign, textSize, textWeight, text, outlinedText } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/text.js";
+import { color, noStroke, fill} from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/colors.js";
+import { cursor} from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/other.js";
+import { arc, image } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/shapes.js";
+import { lerp, dist } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/math.js";
+import { textFont, textAlign, textSize, textWeight, text } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/text.js";
 import { pushMatrix, translate, rotate, scale, popMatrix } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.2/transformation.js";
-import { user } from "./ui.js";
+import { user } from "./helpers/ui.js";
+import { Card } from "./entities/Card.js";
+import { cardData } from "./data/CardData.js";
+import { images } from "./lib/ImageLibrary.js";
+import { gameData } from "./data/GameData.js";
+import { nextPhase } from "./helpers/NextPhase.js";
+import { Player } from "./entities/Player.js";
+import { spaces } from "./entities/Space.js";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
-
-/** Global variables **/
-// {
-
-var clicked = false;
-var turnPhase = "draw";
-var playerTurn = 0;
-var selectedPlayer = null;
-var cursorR = 0;
-var action = false;
-var actionTimer = 0;
-var curPlayerTxt = [color(0, 175, 0), "GREEN"];
-var scene = "game";
-
-//}
 
 function resetCanvas (canvas, ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -40,452 +32,6 @@ function resetCanvas (canvas, ctx) {
     ctx.textBaseline = "alphabetic";
 }
 
-/** Turn phase transition **/
-// {
-
-var nextPhase = {
-    on : false,
-    next : "move",
-    opac : 0,
-    display : function () {
-        noStroke();
-        fill(0, 0, 0, this.opac);
-        rect(0, 0, 800, 800);
-        fill(255, 255, 255, this.opac * 5.1);
-        textFont("sans-serif");
-        textWeight("bold");
-        textSize(70);
-        textAlign("CENTER", "CENTER");
-        textSize(40);
-        text("Continue to " + this.next.toUpperCase() + " phase (click)", 400, 600);
-    },
-    pack : function () {
-        if (this.on) {
-            this.opac = lerp(this.opac, 50, 0.1);
-            if (clicked) {
-                turnPhase = this.next;
-                this.on = false;
-            }
-        }
-        else {
-            this.opac = lerp(this.opac, 0, 0.1);
-        }
-        
-        this.display();
-    }
-};
-
-//}
-
-/** Space **/
-// {
-
-class Space {
-    constructor(x, y, w, h, type) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.type = type;
-        this.occupied = false;
-        this.occupier = null;
-    }
-
-    draw() {
-        noStroke();
-        fill(240);
-        rect(this.x, this.y, this.w, this.h, 10);
-    }
-}
-    
-var spaces = [];
-// Top
-for (var i = 0; i < 16; i++) {
-    spaces.push(new Space(i * 49.5 + 5, 5, 47, 47));
-}
-// Right side
-for (var i = 0; i < 15; i++) {
-    spaces.push(new Space(748, i * 49.5 + 54.5, 47, 47));
-}
-// Bottom
-for (var i = 0; i < 15; i++) {
-    spaces.push(new Space(697 - i * 49.5, 748, 47, 47));
-}
-// Left side
-for (var i = 0; i < 14; i++) {
-    spaces.push(new Space(5, 698 - i * 49.5, 47, 47));
-}
-
-//}
-
-/** Images **/
-// {
-
-var images = {
-    customCursor : function () {
-        
-        noStroke();
-        
-        fill(255);
-        ellipse(80, 80, 160, 160);
-        
-        fill(0);
-        ellipse(80, 80, 150, 150);
-        
-        strokeWeight(10);
-        noFill();
-        
-        stroke(0, 115, 255);
-        arc(80, 80, 130, 130, 200, 225);
-        
-        stroke(245, 245, 0);
-        arc(80, 80, 130, 130, 225, 315);
-        
-        stroke(0, 175, 0);
-        arc(80, 80, 130, 130, -45, 45);
-        
-        stroke(245, 0, 0);
-        arc(80, 80, 130, 130, 45, 135);
-        
-        stroke(0, 115, 255);
-        arc(80, 80, 130, 130, 135, 200);
-        
-        noStroke();
-        for (var i = 0; i < 110; i++) {
-            var lerpC = lerpColor(color(50), color(150), i / 110);
-            
-            fill(lerpC);
-            ellipse(80, 80, 110 - i, 110 - i);
-        }
-        
-        return get(0, 0, 160, 160);
-        
-    },
-    gameBoard : function () {
-        
-        background(0, 0, 0, 0);
-        
-        noStroke();
-        
-        for (var i = 0; i < 1000; i++) {
-            var lerpC = lerpColor(color(50), color(150), i / 1000);
-            
-            fill(lerpC);
-            ellipse(400, 400, 1000 - i, 1000 - i);
-        }
-        
-        fill(0, 0, 0, 50);
-        ellipse(225, 110, 130, 130);
-        ellipse(690, 225, 130, 130);
-        ellipse(575, 690, 130, 130);
-        ellipse(110, 575, 130, 130);
-        
-        fill(0);
-        ellipse(225, 110, 120, 120);
-        ellipse(690, 225, 120, 120);
-        ellipse(575, 690, 120, 120);
-        ellipse(110, 575, 120, 120);
-        
-        fill(150, 150, 150);
-        rect(0, 0, 800, 57);
-        rect(743, 0, 57, 800);
-        rect(0, 743, 800, 57);
-        rect(0, 0, 57, 800);
-        
-        for (var i in spaces) {
-            spaces[i].draw();
-        }
-        
-        // Green circle
-        strokeWeight(5);
-        stroke(0, 150, 0);
-        fill(0, 200, 0);
-        ellipse(225, 110, 105, 105);
-        strokeWeight(2);
-        triangle(225, 65, 240, 80, 210, 80);
-        
-        // Red circle
-        strokeWeight(5);
-        stroke(175, 0, 0);
-        fill(225, 0, 0);
-        ellipse(690, 225, 105, 105);
-        strokeWeight(2);
-        triangle(735, 225, 720, 240, 720, 210);
-        
-        // Blue circle
-        strokeWeight(5);
-        stroke(0, 113, 219);
-        fill(54, 158, 255);
-        ellipse(575, 690, 105, 105);
-        strokeWeight(2);
-        triangle(575, 735, 560, 720, 590, 720);
-        
-        // Blue circle
-        strokeWeight(5);
-        stroke(255, 191, 0);
-        fill(255, 222, 74);
-        ellipse(110, 575, 105, 105);
-        strokeWeight(2);
-        triangle(65, 575, 80, 560, 80, 590);
-        
-        textFont("sans-serif");
-        textSize(22);
-        textWeight("bold");
-        textAlign("CENTER", "CENTER");
-        
-        pushMatrix();
-            translate(225, 110);
-            rotate(180);
-            outlinedText("START", 0, 0, 1, color(0), color(255));
-            outlinedText("START", 110, 575, 1, color(0), color(255));
-        popMatrix();
-        
-        pushMatrix();
-            translate(690, 225);
-            rotate(270);
-            outlinedText("START", 0, 0, 1, color(0), color(255));
-        popMatrix();
-        
-        outlinedText("START", 575, 690, 1, color(0), color(255));
-        
-        pushMatrix();
-            translate(110, 575);
-            rotate(90);
-            outlinedText("START", 0, 0, 1, color(0), color(255));
-        popMatrix();
-        
-        textSize(130);
-        pushMatrix();
-            translate(400, 400);
-            rotate(-45);
-            outlinedText("SORRY!", 0, 0, 10, color(0), color(255));
-        popMatrix();
-        
-        stroke(0);
-        strokeWeight(7);
-        pushMatrix();
-            translate(300, 200);
-            rotate(45);
-            fill(255);
-            rect(0, 0, 100, 150, 20);
-            fill(0);
-            textSize(15);
-            text("DISCARD\nHERE", 50, 65);
-            textSize(10);
-            text("(FACE UP)", 50, 90);
-        popMatrix();
-        
-        pushMatrix();
-            translate(525, 425);
-            rotate(45);
-            fill(255);
-            rect(0, 0, 100, 150, 20);
-            rotate(180);
-            fill(0);
-            textSize(15);
-            text("CARDS\nHERE", -50, -80);
-            textSize(10);
-            text("(FACE DOWN)", -50, -55);
-        popMatrix();
-        
-        return get(0, 0, 800, 800);
-        
-    },
-    cardBackground : function () {
-        
-        noStroke();
-        
-        fill(255);
-        startMask(() => {
-            rect(0, 0, 200, 300, 10);
-        });
-
-        fill(255);
-        rect(0, 0, 200, 300);
-        
-        pushMatrix();
-            
-            rotate(315);
-            
-            fill(0);
-            rect(-70, 20, 80, 40, 10);
-            ellipse(0, 40, 40, 40);
-
-            arc(-5, 40, 40, 40, 0, 10);
-            
-            rect(-85, 290, 80, 40, 10);
-            ellipse(-75, 310, 40, 40);
-            
-            let rand = round(random(30, 60));
-            
-            for (let i = 0; i < 20; i++) {
-                for (let j = 0; j < 10; j++) {
-                    fill(175);
-                    rect(i * rand - 300, j * 15 + 100, rand, 10, 5);
-                    rand = random(30, 60);
-                }
-            }
-            
-        popMatrix();
-
-        endMask();
-        
-        return get(0, 0, 200, 300);
-        
-    },
-    cardOverlay : function () {
-        
-        background(0, 0, 0, 0);
-        
-        noStroke();
-        
-        fill(255);
-        ellipse(80, 80, 160, 160);
-        
-        fill(0);
-        ellipse(80, 80, 150, 150);
-        
-        strokeWeight(10);
-        noFill();
-        
-        stroke(0, 115, 255);
-        arc(80, 80, 130, 130, 200, 225);
-        
-        stroke(245, 245, 0);
-        arc(80, 80, 130, 130, 225, 315);
-        
-        stroke(0, 175, 0);
-        arc(80, 80, 130, 130, -45, 45);
-        
-        stroke(245, 0, 0);
-        arc(80, 80, 130, 130, 45, 135);
-        
-        stroke(0, 115, 255);
-        arc(80, 80, 130, 130, 135, 200);
-        
-        noStroke();
-        for (var i = 0; i < 110; i++) {
-            var lerpC = lerpColor(color(50), color(150), i / 110);
-            
-            fill(lerpC);
-            ellipse(80, 80, 110 - i, 110 - i);
-        }
-        
-        return get(0, 0, 160, 160);
-        
-    },
-    cardBack : function () {
-        
-        noStroke();
-        
-        startMask(() => { rect(0, 0, 200, 300, 10); });
-
-        fill(120);
-        rect(0, 0, 200, 300);
-        
-        fill(120);
-        rect(0, 0, 200, 300);
-        
-        pushMatrix();
-            
-            rotate(7 * Math.PI / 4);
-            
-        popMatrix();
-
-        endMask();
-        
-        return get(0, 0, 200, 300);
-        
-    },
-    greenPlayer : function () {
-        
-        background(0, 0, 0, 0);
-        
-        noStroke();
-        
-        fill(0, 175, 0);
-        ellipse(20, 20, 40, 40);
-        strokeWeight(1);
-        stroke(255, 255, 255, 60);
-        ellipse(20, 20, 16, 16);
-        strokeWeight(3);
-        stroke(255, 255, 255, 175);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 180, 270);
-        arc(20, 20, 40 / 3, 40 / 3, 180, 270);
-        stroke(0, 0, 0, 50);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 0, 90);
-        arc(20, 20, 40 / 3, 40 / 3, 0, 90);
-        
-        return get(0, 0, 40, 40);
-        
-    },
-    redPlayer : function () {
-        
-        background(0, 0, 0, 0);
-        
-        noStroke();
-        
-        fill(200, 0, 0);
-        ellipse(20, 20, 40, 40);
-        strokeWeight(1);
-        stroke(255, 255, 255, 60);
-        ellipse(20, 20, 16, 16);
-        strokeWeight(3);
-        stroke(255, 255, 255, 175);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 180, 270);
-        arc(20, 20, 40 / 3, 40 / 3, 180, 270);
-        stroke(0, 0, 0, 50);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 0, 90);
-        arc(20, 20, 40 / 3, 40 / 3, 0, 90);
-        
-        return get(0, 0, 40, 40);
-        
-    },
-    bluePlayer : function () {
-        
-        background(0, 0, 0, 0);
-        
-        noStroke();
-        
-        fill(0, 130, 255);
-        ellipse(20, 20, 40, 40);
-        strokeWeight(1);
-        stroke(255, 255, 255, 60);
-        ellipse(20, 20, 16, 16);
-        strokeWeight(3);
-        stroke(255, 255, 255, 175);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 180, 270);
-        arc(20, 20, 40 / 3, 40 / 3, 180, 270);
-        stroke(0, 0, 0, 50);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 0, 90);
-        arc(20, 20, 40 / 3, 40 / 3, 0, 90);
-        
-        return get(0, 0, 40, 40);
-        
-    },
-    yellowPlayer : function () {
-        
-        background(0, 0, 0, 0);
-        
-        noStroke();
-        
-        fill(237, 198, 0);
-        ellipse(20, 20, 40, 40);
-        strokeWeight(1);
-        stroke(255, 255, 255, 60);
-        ellipse(20, 20, 16, 16);
-        strokeWeight(3);
-        stroke(255, 255, 255, 175);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 180, 270);
-        arc(20, 20, 40 / 3, 40 / 3, 180, 270);
-        stroke(0, 0, 0, 50);
-        arc(20, 20, 40 / 1.3, 40 / 1.3, 0, 90);
-        arc(20, 20, 40 / 3, 40 / 3, 0, 90);
-        
-        return get(0, 0, 40, 40);
-        
-    }
-};
 
 var curLoad = 0;
 var loaded = false;
@@ -503,308 +49,42 @@ function load () {
     }
 }
 
-//}
-
-/** Player **/
-// {
-
-class Player {
-    constructor(x, y, s, c, startSpace) {
-        this.x = x;
-        this.y = y;
-        this.startX = x;
-        this.startY = y;
-        this.s = s;
-        this.c = c;
-        this.startSpace = startSpace;
-        
-        this.inPlay = false;
-        this.safe = false;
-        this.home = false;
-        this.onSlide = false;
-        this.canMove = false;
-        this.dead = false;
-        
-        this.curSpace = 0;
-        this.targetSpace = startSpace;
-    }
-
-    move() {
-        this.x = lerp(this.x, spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2, 0.1);
-        this.y = lerp(this.y, spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2, 0.1);
-        
-        
-        if (this.targetSpace.occupied) {
-            this.targetSpace.occupier.die();
-        }
-        
-        spaces[this.curSpace].occupied = false;
-        spaces[this.curSpace].occupier = null;
-        spaces[this.targetSpace].occupied = true;
-        spaces[this.targetSpace].occupier = this;
-        
-        if ((this.x + 1 > spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2 && this.x - 1 < spaces[this.targetSpace].x + spaces[this.targetSpace].w / 2) || (this.y + 1 > spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2 && this.y - 1 < spaces[this.targetSpace].y + spaces[this.targetSpace].h / 2)) {
-            this.curSpace = this.targetSpace;
-        }
-    }
-
-    die() {
-        this.x = lerp(this.x, this.startX, 0.1);
-        this.y = lerp(this.y, this.startY, 0.1);
-        this.inPlay = false;
-    }
-
-    draw() {
-        if (this.dead) {
-            this.die();
-        }
-        
-        if (clicked && dist(user.mouseX, user.mouseY, this.x, this.y) < this.s / 2 && turnPhase === "move") {
-            selectedPlayer = this;
-        }
-        
-        noStroke();
-        image(images[this.c + "Player"], this.x - this.s / 2, this.y - this.s / 2);
-        
-        if (selectedPlayer === this && this.canMove) {
-            noFill();
-            stroke(255, 0, 0);
-            rect(this.x - this.s / 2, this.y - this.s / 2, this.s, this.s);
-        }
-    }
-}
-
-var team1 = [
+const team1 = [
     new Player(205, 90, 40, "green", 4),
     new Player(245, 90, 40, "green", 4),
     new Player(205, 130, 40, "green", 4),
     new Player(245, 130, 40, "green", 4)
 ];
-var team2 = [
+const team2 = [
     new Player(710, 205, 40, "red", 19),
     new Player(710, 245, 40, "red", 19),
     new Player(670, 205, 40, "red", 19),
     new Player(670, 245, 40, "red", 19)
 ];
-var team3 = [
+const team3 = [
     new Player(595, 710, 40, "blue", 34),
     new Player(555, 710, 40, "blue", 34),
     new Player(595, 670, 40, "blue", 34),
     new Player(555, 670, 40, "blue", 34)
 ];
-var team4 = [
+const team4 = [
     new Player(90, 595, 40, "yellow", 49),
     new Player(90, 555, 40, "yellow", 49),
     new Player(130, 595, 40, "yellow", 49),
     new Player(130, 555, 40, "yellow", 49)
 ];
 
-var teams = [team1, team2, team3, team4];
+const teams = [team1, team2, team3, team4];
 
-//}
-
-/** Cards array **/
-// {
-
-var cards = [
-    {
-        value : 1,
-        quantity : 5,
-        txt : "Move a pawn from START or if in play, move forward 1 spaces.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.inPlay) {
-                if (curPlayer.targetSpace + this.value > 60) {
-                    curPlayer.targetSpace = curPlayer.curSpace + this.value - 60;
-                }
-                else {
-                    curPlayer.targetSpace = curPlayer.curSpace + this.value;
-                }
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.startSpace;
-                curPlayer.inPlay = true;
-            }
-        }
-    },
-    {
-        value : 2,
-        quantity : 4,
-        txt : "Move a pawn from START or if in play, move forward 2 spaces.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.inPlay) {
-                if (curPlayer.targetSpace + this.value > 60) {
-                    curPlayer.targetSpace = curPlayer.curSpace + this.value - 60;
-                }
-                else {
-                    curPlayer.targetSpace = curPlayer.curSpace + this.value;
-                }
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.startSpace;
-                curPlayer.inPlay = true;
-            }
-        }
-    },
-    {
-        value : 3,
-        quantity : 4,
-        txt : "Move forward 3.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.targetSpace + this.value > 60) {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value - 60;
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value;
-            }
-        }
-    },
-    {
-        value : 4,
-        quantity : 4,
-        txt : "Move backward 4.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.targetSpace - this.value < 0) {
-                curPlayer.targetSpace = curPlayer.curSpace - this.value + 60;
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.curSpace - this.value;
-            }
-        }
-    },
-    {
-        value : 5,
-        quantity : 4,
-        txt : "Move forward 5.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.targetSpace + this.value > 60) {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value - 60;
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value;
-            }
-        }
-    },
-    {
-        value : 8,
-        quantity : 4,
-        txt : "Move forward 8.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.targetSpace + this.value > 60) {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value - 60;
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value;
-            }
-        }
-    },
-    {
-        value : 12,
-        quantity : 4,
-        txt : "Move forward 12.",
-        movePlayer : function (curPlayer) {
-            if (curPlayer.targetSpace + this.value > 60) {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value - 60;
-            }
-            else {
-                curPlayer.targetSpace = curPlayer.curSpace + this.value;
-            }
-        }
-    }
-];
-
-//}
-
-class Card {
-    constructor(x, y, w, h, card) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.r = 45;
-        this.scaleX = -1 / 2;
-        this.scaleY = 1 / 2;
-        this.card = card;
-        this.drawTimer = 0;
-        this.actionTimer = 0;
-        this.discardTimer = 0;
-    }
-
-    drawFromDeck() {
-        this.drawTimer++;
-        if (this.drawTimer > 80) {
-            nextPhase.next = "move";
-            nextPhase.on = true;
-        }
-        this.x = lerp(this.x, 300, 0.1);
-        this.y = lerp(this.y, 250, 0.1);
-        this.scaleX = lerp(this.scaleX, 1, 0.1);
-        this.scaleY = lerp(this.scaleY, 1, 0.1);
-        this.r = lerp(this.r, 0, 0.1);
-    }
-
-    move(curPlayer) {
-        this.card.movePlayer(curPlayer);
-    }
-
-    discard() {
-        this.discardTimer++;
-        if (this.discardTimer > 80 && turnPhase === "move") {
-            nextPhase.next = "draw";
-            nextPhase.on = true;
-        }
-        this.x = lerp(this.x, 183, 0.1);
-        this.y = lerp(this.y, 140, 0.1);
-        this.scaleX = lerp(this.scaleX, 1 / 2, 0.1);
-        this.scaleY = lerp(this.scaleY, 1 / 2, 0.1);
-        this.r = lerp(this.r, 45, 0.1);
-    }
-
-    draw() {
-        pushMatrix();
-            translate(this.x + this.w / 2, this.y + this.h / 2);
-            rotate(this.r);
-            scale(this.scaleX, this.scaleY);
-            translate(-(this.x + this.w / 2), -(this.y + this.h / 2));
-            if (this.scaleX > 0) {
-                image(images.cardBackground, this.x, this.y, this.w, this.h);
-                image(images.cardOverlay, this.x + this.w / 10, this.y + this.h * 2 / 9, this.w * 4 / 5, this.h * 8 / 15);
-                
-                fill(255);
-                textAlign("CENTER", "CENTER");
-                textFont("sans-serif");
-                textSize(70);
-                textWeight("bold");
-                text(this.card.value, this.x + this.w / 2, this.y + this.h / 2);
-                textSize(25);
-                text(this.card.value, this.x + this.w / 8, this.y + this.h / 10);
-                text(this.card.value, this.x + this.w / 1.17, this.y + this.h / 1.12);
-                
-                fill(0);
-                textSize(12);
-                textAlign("LEFT", "BASELINE");
-                text(this.card.txt, this.x + this.w / 4, this.y + this.h / 15, this.w * 3 / 4, this.h);
-            }
-            else {
-                image(images.cardBack, this.x, this.y, this.w, this.h);
-            }
-        popMatrix();
+const discardDeck = [];
+const drawDeck = [];
+for (var i = 0; i < cardData.length; i++) {
+    for (var j = 0; j < cardData[i].quantity; j++) {
+        drawDeck.push(new Card(407, 365, 200, 300, cardData[i]));
     }
 }
 
-//}
-
-/** Create the deck **/
-// {
-
-var discardDeck = [];
-var drawDeck = [];
-for (var i = 0; i < cards.length; i++) {
-    for (var j = 0; j < cards[i].quantity; j++) {
-        drawDeck.push(new Card(407, 365, 200, 300, cards[i]));
-    }
-}
-
-var shuffleArray = function (array) {
+function shuffleArray (array) {
     var counter = array.length;
     
     while (counter > 0) {
@@ -817,11 +97,6 @@ var shuffleArray = function (array) {
 };
 
 shuffleArray(drawDeck);
-
-//}
-
-/** Button **/
-// {
 
 class Button {
     constructor(x, y, w, h, txt, txtSize, func) {
@@ -842,7 +117,7 @@ class Button {
         
         if (this.mouseOver) {
             this.arc = lerp(this.arc, 0, 0.1);
-            if (clicked) {
+            if (user.mouseClicked) {
                 this.func();
             }
         }
@@ -869,12 +144,7 @@ class Button {
 }
 
 const confirm = new Button(200, 200, 75, 75, "Confirm", 15, function () {});
-
-//}
-
-/** Draw and mouseClicked funcitons **/
-// {
-
+    
 function draw () {
     try {
         
@@ -884,39 +154,39 @@ function draw () {
         load();
     }
     else {
-        switch (scene) {
+        switch (gameData.scene) {
             case "menu" :
                 //image(images.menu, 0, 0);
             break;
             case "game" : 
                 image(images.gameBoard, 0, 0);
                 
-                for (var i in team1) {
-                    team1[i].canMove = (playerTurn === 0 ? true : false);
+                for (let i in team1) {
+                    team1[i].canMove = (gameData.playerTurn === 0 ? true : false);
                     
                     team1[i].draw();
                     if (team1[i].inPlay) {
                         team1[i].move();
                     }
                 }
-                for (var i in team2) {
-                    team2[i].canMove = (playerTurn === 1 ? true : false);
+                for (let i in team2) {
+                    team2[i].canMove = (gameData.playerTurn === 1 ? true : false);
                     
                     team2[i].draw();
                     if (team2[i].inPlay) {
                         team2[i].move();
                     }
                 }
-                for (var i in team3) {
-                    team3[i].canMove = (playerTurn === 2 ? true : false);
+                for (let i in team3) {
+                    team3[i].canMove = (gameData.playerTurn === 2 ? true : false);
                     
                     team3[i].draw();
                     if (team3[i].inPlay) {
                         team3[i].move();
                     }
                 }
-                for (var i in team4) {
-                    team4[i].canMove = (playerTurn === 3 ? true : false);
+                for (let i in team4) {
+                    team4[i].canMove = (gameData.playerTurn === 3 ? true : false);
                     
                     team4[i].draw();
                     if (team4[i].inPlay) {
@@ -924,36 +194,36 @@ function draw () {
                     }
                 }
                 
-                for (var i in  discardDeck) {
+                for (let i in  discardDeck) {
                     discardDeck[i].draw();
                 }
-                for (var i in drawDeck) {
+                for (let i in drawDeck) {
                     drawDeck[i].draw();
                 }
                 
-                var curCard = drawDeck[drawDeck.length - 1];
+                let curCard = drawDeck[drawDeck.length - 1];
                 
-                if (turnPhase === "draw") {
+                if (gameData.turnPhase === "draw") {
                     curCard.drawFromDeck();
                 }
                 
-                if (turnPhase === "move") {
+                if (gameData.turnPhase === "move") {
                     
-                    if (selectedPlayer !== null && selectedPlayer.canMove) {
+                    if (gameData.selectedPlayer !== null && gameData.selectedPlayer.canMove) {
                         
-                        if (playerTurn === 0) {
+                        if (gameData.playerTurn === 0) {
                             confirm.x = 325;
                             confirm.y = 110;
                         }
-                        else if (playerTurn === 1) {
+                        else if (gameData.playerTurn === 1) {
                             confirm.x = 690;
                             confirm.y = 325;
                         }
-                        else if (playerTurn === 2) {
+                        else if (gameData.playerTurn === 2) {
                             confirm.x = 475;
                             confirm.y = 690;
                         }
-                        else if (playerTurn === 3) {
+                        else if (gameData.playerTurn === 3) {
                             confirm.x = 110;
                             confirm.y = 475;
                         }
@@ -962,41 +232,50 @@ function draw () {
                     }
                     
                     confirm.func = function () {
-                        if (!action && selectedPlayer.canMove) {
-                            if (!selectedPlayer.inPlay && curCard.card.value !== 1 && curCard.card.value !== 2) {
+                        if (!gameData.action && gameData.selectedPlayer.canMove) {
+                            if (!gameData.selectedPlayer.inPlay && curCard.card.value !== 1 && curCard.card.value !== 2) {
                                 return;
                             }
                             else {
-                                curCard.move(selectedPlayer);
-                                if (spaces[selectedPlayer.targetSpace].occupied) {
-                                    spaces[selectedPlayer.targetSpace].occupier.dead = true;
+                                curCard.move(gameData.selectedPlayer);
+                                if (spaces[gameData.selectedPlayer.targetSpace].occupied) {
+                                    spaces[gameData.selectedPlayer.targetSpace].occupier.dead = true;
                                 }
-                                action = true;
-                                spaces[selectedPlayer.curSpace].occupied = false;
-                                spaces[selectedPlayer.curSpace].occupier = null;
-                                spaces[selectedPlayer.targetSpace].occupied = true;
-                                spaces[selectedPlayer.targetSpace].occupier = selectedPlayer;
+                                gameData.action = true;
+                                spaces[gameData.selectedPlayer.curSpace].occupied = false;
+                                spaces[gameData.selectedPlayer.curSpace].occupier = null;
+                                spaces[gameData.selectedPlayer.targetSpace].occupied = true;
+                                spaces[gameData.selectedPlayer.targetSpace].occupier = gameData.selectedPlayer;
                             }
                         }
                     };
                     
-                    if (!teams[playerTurn][0].inPlay && !teams[playerTurn][1].inPlay && !teams[playerTurn][2].inPlay && !teams[playerTurn][3].inPlay && curCard.card.value !== 1 && curCard.card.value !== 2) {
-                        action = true;
+                    let allPlayersOutOfPlay = true;
+
+                    for (let p of teams[gameData.playerTurn]) {
+                        if (p.inPlay) {
+                            allPlayersOutOfPlay = false;
+                            break;
+                        }
+                    }
+
+                    if (allPlayersOutOfPlay && curCard.card.value !== 1 && curCard.card.value !== 2) {
+                        gameData.action = true;
                     }
                     
-                    if (action) {
-                        actionTimer++;
+                    if (gameData.action) {
+                        gameData.actionTimer++;
                         curCard.discard();
-                        if (actionTimer > 80) {
-                            selectedPlayer = null;
-                            if (clicked) {
-                                actionTimer = 0;
-                                action = false;
+                        if (gameData.actionTimer > 80) {
+                            gameData.electedPlayer = null;
+                            if (user.mouseClicked) {
+                                gameData.actionTimer = 0;
+                                gameData.action = false;
                                 discardDeck.push(curCard);
                                 drawDeck.pop();
-                                playerTurn++;
-                                if (playerTurn > 3) {
-                                    playerTurn = 0;
+                                gameData.playerTurn++;
+                                if (gameData.playerTurn > 3) {
+                                    gameData.playerTurn = 0;
                                 }
                             }
                         }
@@ -1009,10 +288,10 @@ function draw () {
                     }
                 }
                 
-                cursorR += 5;
+                gameData.cursorR += 5;
                 pushMatrix();
                     translate(user.mouseX, user.mouseY);
-                    rotate(cursorR);
+                    rotate(gameData.cursorR);
                     scale(0.15);
                     image(images.customCursor, -80, -80);
                 popMatrix();
@@ -1021,20 +300,15 @@ function draw () {
                 fill(0);
                 textSize(15);
                 text("Current player: ", 15, 20);
-                curPlayerTxt = playerTurn === 0 ? [color(0, 175, 0), "GREEN"] : (playerTurn === 1 ? [color(200, 0, 0), "RED"] : (playerTurn === 2 ? [color(0, 130, 255), "BLUE"] : [color(237, 198, 0), "YELLOW"]));
-                fill(curPlayerTxt[0]);
-                text(curPlayerTxt[1], 125, 20);
+                gameData.curPlayerTxt = gameData.playerTurn === 0 ? [color(0, 175, 0), "GREEN"] : (gameData.playerTurn === 1 ? [color(200, 0, 0), "RED"] : (gameData.playerTurn === 2 ? [color(0, 130, 255), "BLUE"] : [color(237, 198, 0), "YELLOW"]));
+                fill(gameData.curPlayerTxt[0]);
+                text(gameData.curPlayerTxt[1], 125, 20);
             break;
         }
     }
-    // else {
-    //     background(50);
-    //     image(images.cardBackground, 100, 100);
-
-    // }
     
     nextPhase.pack();
-    clicked = false;
+    user.update();
     
     fill(0);
     textSize(15);
@@ -1050,10 +324,6 @@ function draw () {
 }
 
 draw();
-
-window.onmouseup = function () {
-    clicked = true;
-};
 
 //}
 
