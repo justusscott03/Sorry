@@ -1,3 +1,5 @@
+import { SceneManager } from "./SceneManager.js";
+
 export class ImageManager {
     // ─────────────────────────────────────────────
     // Singleton
@@ -79,6 +81,7 @@ export class ImageManager {
 
         if (this.curLoad >= keys.length) {
             this.loaded = true;
+            SceneManager.Instance.setCurrentScene("game");
         }
     }
 

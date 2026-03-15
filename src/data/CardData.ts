@@ -4,7 +4,7 @@ interface CardData {
     value: number;
     quantity: number;
     txt: string;
-    movePlayer: CallableFunction;
+    movePlayer: (curPlayer: Player) => void;
 }
 
 const cardData: CardData[] = [

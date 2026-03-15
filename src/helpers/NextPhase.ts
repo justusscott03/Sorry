@@ -4,6 +4,7 @@ import { lerp } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.
 import { textFont, textAlign, textSize, textWeight, text } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/text.js";
 import { UserInput } from "./UserInput.js";
 import { gameData } from "../data/GameData.js";
+import { TurnManager } from "./TurnManager.js";
 
 export class NextPhase {
     private static _instance: NextPhase;
@@ -46,7 +47,7 @@ export class NextPhase {
             this.opac = lerp(this.opac, 50, 0.1);
 
             if (this.readyToAdvance()) {
-                gameData.turnPhase = this.next;
+                TurnManager.Instance.turnPhase = this.next;
                 this.on = false;
             }
         } 

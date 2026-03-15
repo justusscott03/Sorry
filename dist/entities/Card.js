@@ -3,9 +3,9 @@ import { image } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1
 import { lerp } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/math.js";
 import { textFont, textAlign, textSize, textWeight, text } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/text.js";
 import { pushMatrix, translate, rotate, scale, popMatrix } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/transformation.js";
-import { gameData } from "../data/GameData.js";
 import { NextPhase } from "../helpers/NextPhase.js";
 import { ImageManager } from "../helpers/ImageManager.js";
+import { TurnManager } from "../helpers/TurnManager.js";
 export class Card {
     constructor(x, y, w, h, card) {
         this.x = x;
@@ -36,7 +36,7 @@ export class Card {
     }
     discard() {
         this.discardTimer++;
-        if (this.discardTimer > 80 && gameData.turnPhase === "move") {
+        if (this.discardTimer > 80 && TurnManager.Instance.turnPhase === "move") {
             NextPhase.Instance.trigger("draw");
         }
         this.x = lerp(this.x, 183, 0.1);

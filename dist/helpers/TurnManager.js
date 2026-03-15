@@ -1,4 +1,3 @@
-import { gameData } from "../data/GameData.js";
 import { Button } from "../ui/Button.js";
 import { DeckManager } from "./DeckManager.js";
 import { NextPhase } from "./NextPhase.js";
@@ -15,6 +14,9 @@ export class TurnManager {
     constructor() {
         this.isInAction = false;
         this.actionTimer = 0;
+        this.turnPhase = "draw";
+        this.playerTurn = 0;
+        this.selectedPlayer = null;
     }
     static get Instance() {
         var _a;
@@ -22,17 +24,17 @@ export class TurnManager {
     }
     update() {
         const curCard = DeckManager.Instance.drawCard();
-        if (gameData.turnPhase === "draw") {
+        if (this.turnPhase === "draw") {
             this.handleDrawPhase(curCard);
         }
-        if (gameData.turnPhase === "move") {
+        if (this.turnPhase === "move") {
             this.handleMovePhase(curCard);
         }
     }
     handleDrawPhase(card) {
         card.drawFromDeck();
         if (NextPhase.Instance.readyToAdvance()) {
-            gameData.turnPhase = "move";
+            this.turnPhase = "move";
         }
     }
     handleMovePhase(card) {
@@ -42,10 +44,10 @@ export class TurnManager {
         this.checkReshuffle();
     }
     updateConfirmButton(card) {
-        const player = gameData.selectedPlayer;
+        const player = TurnManager.Instance.selectedPlayer;
         if (!player || !player.canMove)
             return;
-        const { x, y } = confirmPositions[gameData.playerTurn];
+        const { x, y } = confirmPositions[TurnManager.Instance.playerTurn];
         confirm.x = x;
         confirm.y = y;
         confirm.func = () => {
@@ -59,7 +61,7 @@ export class TurnManager {
         confirm.draw();
     }
     checkAutoAction(card) {
-        const team = TeamsManager.Instance.getCurrentTeam(gameData.playerTurn);
+        const team = TeamsManager.Instance.getCurrentTeam(TurnManager.Instance.playerTurn);
         const allOut = !team.some(p => p.inPlay);
         if (allOut && card.card.value !== 1 && card.card.value !== 2) {
             this.isInAction = true;
@@ -73,11 +75,11 @@ export class TurnManager {
         if (this.actionTimer > 80 && UserInput.Instance.mouseClicked) {
             this.actionTimer = 0;
             this.isInAction = false;
-            gameData.selectedPlayer = null;
+            TurnManager.Instance.selectedPlayer = null;
             DeckManager.Instance.discard(card);
             DeckManager.Instance.popCard();
-            gameData.playerTurn = (gameData.playerTurn + 1) % 4;
-            gameData.turnPhase = "draw";
+            TurnManager.Instance.playerTurn = (TurnManager.Instance.playerTurn + 1) % 4;
+            this.turnPhase = "draw";
         }
     }
     checkReshuffle() {

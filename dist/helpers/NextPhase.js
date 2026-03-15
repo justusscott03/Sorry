@@ -3,7 +3,7 @@ import { rect } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.
 import { lerp } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/math.js";
 import { textFont, textAlign, textSize, textWeight, text } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/text.js";
 import { UserInput } from "./UserInput.js";
-import { gameData } from "../data/GameData.js";
+import { TurnManager } from "./TurnManager.js";
 export class NextPhase {
     constructor() {
         this.on = false;
@@ -39,7 +39,7 @@ export class NextPhase {
         if (this.on) {
             this.opac = lerp(this.opac, 50, 0.1);
             if (this.readyToAdvance()) {
-                gameData.turnPhase = this.next;
+                TurnManager.Instance.turnPhase = this.next;
                 this.on = false;
             }
         }

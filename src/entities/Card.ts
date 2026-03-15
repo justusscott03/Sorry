@@ -9,6 +9,7 @@ import { NextPhase } from "../helpers/NextPhase.js";
 import { CardData } from "../data/CardData.js";
 import { Player } from "./Player.js";
 import { ImageManager } from "../helpers/ImageManager.js";
+import { TurnManager } from "../helpers/TurnManager.js";
 
 export class Card {
     x: number;
@@ -57,7 +58,7 @@ export class Card {
 
     discard() {
         this.discardTimer++;
-        if (this.discardTimer > 80 && gameData.turnPhase === "move") {
+        if (this.discardTimer > 80 && TurnManager.Instance.turnPhase === "move") {
             NextPhase.Instance.trigger("draw");
         }
         this.x = lerp(this.x, 183, 0.1);

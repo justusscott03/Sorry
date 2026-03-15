@@ -5,6 +5,7 @@ import { UserInput } from "../helpers/UserInput.js";
 import { gameData } from "../data/GameData.js";
 import { spaces } from "./Space.js";
 import { ImageManager } from "../helpers/ImageManager.js";
+import { TurnManager } from "../helpers/TurnManager.js";
 
 export class Player {
     x: number;
@@ -80,14 +81,14 @@ export class Player {
             this.die();
         }
         
-        if (user.mouseClicked && dist(user.mouseX, user.mouseY, this.x, this.y) < this.s / 2 && gameData.turnPhase === "move") {
-            gameData.selectedPlayer = this;
+        if (user.mouseClicked && dist(user.mouseX, user.mouseY, this.x, this.y) < this.s / 2 && TurnManager.Instance.turnPhase === "move") {
+            TurnManager.Instance.selectedPlayer = this;
         }
         
         noStroke();
         image(ImageManager.Instance.get(this.c + "Player"), this.x - this.s / 2, this.y - this.s / 2);
         
-        if (gameData.selectedPlayer === this && this.canMove) {
+        if (TurnManager.Instance.selectedPlayer === this && this.canMove) {
             console.log(this.inPlay)
             noFill();
             stroke(255, 0, 0);

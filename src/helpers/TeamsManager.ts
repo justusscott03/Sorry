@@ -1,10 +1,18 @@
-import { gameData } from "../data/GameData.js";
+import { color } from "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/colors.js";
 import { Player } from "../entities/Player.js";
+import { TurnManager } from "./TurnManager.js";
 
 export class TeamsManager {
     private static _instance: TeamsManager;
 
     teams: Player[][] = [];
+
+    static teamColorPairs: string[][] = [
+        [color(0, 175, 0), "GREEN"],
+        [color(200, 0, 0), "RED"],
+        [color(0, 130, 255), "BLUE"],
+        [color(237, 198, 0), "YELLOW"]
+    ];
 
     private constructor() {
         this.buildTeams();
@@ -69,7 +77,7 @@ export class TeamsManager {
     renderTeams() {
         for (const team of this.teams) {
             for (const player of team) {
-                player.canMove = gameData.playerTurn === this.getTeamIndex(player);
+                player.canMove = TurnManager.Instance.playerTurn === this.getTeamIndex(player);
                 player.draw();
                 if (player.inPlay) player.move();
             }

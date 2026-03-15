@@ -1,3 +1,4 @@
+import { SceneManager } from "./SceneManager.js";
 export class ImageManager {
     static init(canvas) {
         if (!this._instance) {
@@ -57,6 +58,7 @@ export class ImageManager {
         this.curLoad++;
         if (this.curLoad >= keys.length) {
             this.loaded = true;
+            SceneManager.Instance.setCurrentScene("game");
         }
     }
     /** Retrieve a generated image */

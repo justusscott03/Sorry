@@ -1,5 +1,6 @@
 import { gameData } from "../data/GameData.js";
 import { Card } from "../entities/Card.js";
+import { Player } from "../entities/Player.js";
 import { Button } from "../ui/Button.js";
 import { DeckManager } from "./DeckManager.js";
 import { NextPhase } from "./NextPhase.js";
@@ -21,6 +22,10 @@ export class TurnManager {
     private isInAction: boolean = false;
     private actionTimer: number = 0;
 
+    turnPhase: string = "draw";
+    playerTurn: number = 0;
+    selectedPlayer: Player | null = null;
+
     static get Instance() {
         return this._instance ??= new TurnManager();
     }
@@ -28,11 +33,11 @@ export class TurnManager {
     update() {
         const curCard = DeckManager.Instance.drawCard();
 
-        if (gameData.turnPhase === "draw") {
+        if (this.turnPhase === "draw") {
             this.handleDrawPhase(curCard);
         }
 
-        if (gameData.turnPhase === "move") {
+        if (this.turnPhase === "move") {
             this.handleMovePhase(curCard);
         }
     }
@@ -40,7 +45,7 @@ export class TurnManager {
     private handleDrawPhase(card: Card) {
         card.drawFromDeck();
         if (NextPhase.Instance.readyToAdvance()) {
-            gameData.turnPhase = "move";
+            this.turnPhase = "move";
         }
     }
 
@@ -52,10 +57,10 @@ export class TurnManager {
     }
 
     private updateConfirmButton(card: Card) {
-        const player = gameData.selectedPlayer;
+        const player = TurnManager.Instance.selectedPlayer;
         if (!player || !player.canMove) return;
 
-        const { x, y } = confirmPositions[gameData.playerTurn];
+        const { x, y } = confirmPositions[TurnManager.Instance.playerTurn];
         confirm.x = x;
         confirm.y = y;
 
@@ -71,7 +76,7 @@ export class TurnManager {
     }
 
     private checkAutoAction(card: Card) {
-        const team = TeamsManager.Instance.getCurrentTeam(gameData.playerTurn);
+        const team = TeamsManager.Instance.getCurrentTeam(TurnManager.Instance.playerTurn);
         const allOut = !team.some(p => p.inPlay);
 
         if (allOut && card.card.value !== 1 && card.card.value !== 2) {
@@ -88,13 +93,13 @@ export class TurnManager {
         if (this.actionTimer > 80 && UserInput.Instance.mouseClicked) {
             this.actionTimer = 0;
             this.isInAction = false;
-            gameData.selectedPlayer = null;
+            TurnManager.Instance.selectedPlayer = null;
 
             DeckManager.Instance.discard(card);
             DeckManager.Instance.popCard();
 
-            gameData.playerTurn = (gameData.playerTurn + 1) % 4;
-            gameData.turnPhase = "draw";
+            TurnManager.Instance.playerTurn = (TurnManager.Instance.playerTurn + 1) % 4;
+            this.turnPhase = "draw";
         }
     }
 

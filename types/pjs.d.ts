@@ -12,7 +12,7 @@ declare module "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/colo
 
 declare module "https://cdn.jsdelivr.net/gh/justusscott03/PJSLibrary@v1.1.3/other.js" {
     export function get(x?: number, y?: number, w?: number, h?: number): HTMLCanvasElement;
-    export function startMask(shape: CallableFunction): void;
+    export function startMask(shape: () => void): void;
     export function endMask(): void;
     export function cursor(cursor: string): void;
 }

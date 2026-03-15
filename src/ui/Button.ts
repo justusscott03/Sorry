@@ -12,12 +12,12 @@ export class Button {
     h: number;
     txt: string;
     txtSize: number;
-    func: CallableFunction;
+    func: () => void;
 
     mouseOver: boolean;
     arc: number;
 
-    constructor(x: number, y: number, w: number, h: number, txt: string, txtSize: number, func: CallableFunction) {
+    constructor(x: number, y: number, w: number, h: number, txt: string, txtSize: number, func: () => void) {
         this.x = x;
         this.y = y;
         this.w = w;
